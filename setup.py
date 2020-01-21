@@ -119,10 +119,6 @@ setup(
         'invenio_base.api_apps': [
             'invenio_communities = invenio_communities:Communities',
         ],
-        'invenio_base.api_blueprints': [
-            'invenio_communities = invenio_communities.'
-            'views:create_blueprint_from_app'
-        ],
         'invenio_search.mappings': [
             'communities = invenio_communities.mappings',
         ],
