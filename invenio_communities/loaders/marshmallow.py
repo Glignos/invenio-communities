@@ -6,10 +6,10 @@
 # Invenio is free software; you can redistribute it and/or modify it
 # under the terms of the MIT License; see LICENSE file for more details.
 from flask import request
+from flask_security import current_user
+from invenio_records_rest.loaders.marshmallow import MarshmallowErrors
 from marshmallow import ValidationError
 from marshmallow import __version_info__ as marshmallow_version
-from invenio_records_rest.loaders.marshmallow import MarshmallowErrors
-from flask_security import current_user
 
 
 def marshmallow_loader(schema_class):
