@@ -10,14 +10,10 @@
 
 from __future__ import absolute_import, print_function
 
-from flask_security import current_user
-from flask import current_app, abort
-from sqlalchemy.exc import IntegrityError
-from werkzeug.local import LocalProxy
-
-from invenio_db import db
+from flask import current_app
+from invenio_jsonschemas import current_jsonschemas
 from invenio_records.api import Record
-from invenio_accounts.models import User
+from werkzeug.local import LocalProxy
 
 from .models import CommunityMetadata, CommunityMember, MembershipRequest
 from .email import send_email_invitation
@@ -30,8 +26,15 @@ class Community(Record):
     # "invenio_records.api.RecordBase" have to be overridden/removed
     model_cls = CommunityMetadata
 
-    schema = LocalProxy(lambda: current_app.config.get(
-            'COMMUNITY_SCHEMA', 'communities/communities-v1.0.0.json'))
+    schema = LocalProxy(lambda: current_jsonschemas.path_to_url(
+        current_app.config.get(
+            'COMMUNITY_SCHEMA', 'communities/communities-v1.0.0.json')))
+
+    @classmethod
+    def create(cls, data, *args, **kwargs):
+        """Create community record with default '$schema'."""
+        data['$schema'] = str(cls.schema)
+        return super(Community, cls).create(data, *args, **kwargs)
 
 
     @classmethod
@@ -87,6 +90,7 @@ class Community(Record):
                 self.model.delete()
 
         return self
+<<<<<<< HEAD
 
 
 
@@ -157,3 +161,5 @@ class MembershipRequestCls():
     def decline_invitation(cls, membership_request_id):
         MembershipRequest.delete(membership_request_id)
         pass
+=======
+>>>>>>> marshmallow: $schema, id and other fixes
