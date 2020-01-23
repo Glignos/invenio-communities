@@ -119,6 +119,9 @@ setup(
         'invenio_base.api_apps': [
             'invenio_communities = invenio_communities:Communities',
         ],
+        'invenio_base.blueprints': [
+            'invenio_communities = invenio_communities.views:ui_blueprint',
+        ],
         'invenio_search.mappings': [
             'communities = invenio_communities.mappings',
         ],
@@ -130,6 +133,9 @@ setup(
         ],
         'invenio_jsonschemas.schemas': [
             'communities = invenio_communities.jsonschemas',
+        ],
+        'invenio_assets.webpack': [
+            'invenio_communities = invenio_communities.webpack:communities'
         ],
     },
     extras_require=extras_require,

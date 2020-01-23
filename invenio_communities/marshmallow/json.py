@@ -15,7 +15,7 @@ import uuid
 from invenio_pidstore.models import PersistentIdentifier
 from invenio_records_rest.schemas import Nested, StrictKeysMixin
 from invenio_records_rest.schemas.fields import DateString, GenFunction, \
-    PersistentIdentifier, SanitizedHTML, SanitizedUnicode
+    SanitizedHTML, SanitizedUnicode
 from marshmallow import ValidationError, fields, missing, validate
 
 from invenio_communities.api import Community

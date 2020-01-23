@@ -10,13 +10,14 @@
 
 from __future__ import absolute_import, print_function
 
+from flask_menu import current_menu
 from flask.views import MethodView
 from webargs.flaskparser import use_kwargs
 from webargs import fields, validate
 from invenio_db import db
 
 from functools import wraps
-from flask import Blueprint, abort, request
+from flask import Blueprint, abort, request, render_template
 from invenio_communities.api import CommunityMembersAPI, MembershipRequestCls
 from flask_security import current_user
 from sqlalchemy.exc import SQLAlchemyError
@@ -75,7 +76,7 @@ class CommunityMembersResource(MethodView):
             location='json',
             required=False,
             validate=[validate.OneOf(['M', 'A', 'C'])]
-        ),# TODO add valid options
+        ),  # TODO add valid options
         'email': fields.Email(
             location='json',
             required=False
@@ -166,3 +167,34 @@ class MembershipRequest(MethodView):
 
         db.session.commit()
         return 'Cool', 200
+
+
+ui_blueprint = Blueprint(
+    'invenio_communities',
+    __name__,
+    template_folder='templates',
+    static_folder='static',
+)
+
+
+@ui_blueprint.before_app_first_request
+def init_menu():
+    """Initialize menu before first request."""
+    item = current_menu.submenu('main.communities')
+    item.register(
+        'invenio_communities.index',
+        'Communities',
+        order=3,
+    )
+
+
+@ui_blueprint.route('/communities/new')
+def new():
+    """Create a new community."""
+    return render_template('new.html')
+
+
+@ui_blueprint.route('/communities/')
+def index():
+    """Create a new community."""
+    return render_template('index.html')
