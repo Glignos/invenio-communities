@@ -7,11 +7,11 @@
  */
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
-import { Formik, Form } from "formik";
+import { Formik, Form, FieldArray, Field } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 import _ from "lodash";
-import { TextInput, SelectInput, RichInput } from "./forms";
+import { TextInput, SelectInput, RichInput, StringArrayInput, ObjectArrayInput } from "./forms";
 
 const COMMUNITY_TYPES = [
   { id: "organization", display: "Institution/Organization" },
@@ -26,6 +26,17 @@ const VISIBILITY_TYPES = [
   { id: "hidden", display: "Hidden" }
 ];
 
+const MEMBER_POLICY_TYPES = [
+  { id: "open", display: "Open" },
+  { id: "closed", display: "Closed" }
+]
+
+const RECORD_POLICY_TYPES = [
+  { id: "open", display: "Open" },
+  { id: "closed", display: "Closed" },
+  { id: "restricted", display: "Restricted" }
+];
+
 const CommunityCreateForm = () => {
   const [globalError, setGlobalError] = useState(null);
   return (
@@ -36,13 +47,16 @@ const CommunityCreateForm = () => {
           id: "",
           description: "",
           title: "",
-          // curation_policy: "",
-          // page: "",
+          curation_policy: "",
+          page: "",
           type: "event",
           website: "",
-          visibility: "public"
-          // funding: "",
-          // domain: ""
+          visibility: "public",
+          member_policy: "open",
+          record_policy: "open",
+          funding: [''],
+          domain: [''],
+          alternate_identifiers: [{'scheme': '', 'identifier': ''}]
         }}
         validationSchema={Yup.object({
           id: Yup.string()
@@ -50,15 +64,15 @@ const CommunityCreateForm = () => {
             .max(32, "Must be 32 characters or less"),
           description: Yup.string()
             .required("Required")
-            .max(250, "Must be 250 characters or less"),
+            .max(250, "Must be 250 characterdasdass or less"),
           title: Yup.string()
             .max(120, "Must be 120 characters or less")
             .required("Required"),
-          // curation_policy: Yup.string().max(
-          //   250,
-          //   "Must be 250 characters or less"
-          // ),
-          // page: Yup.string().max(250, "Must be 250 characters or less"),
+          curation_policy: Yup.string().max(
+            250,
+            "Must be 250 characters or less"
+          ),
+          page: Yup.string().max(250, "Must be 250 characters or less"),
           type: Yup.string()
             .required("Required")
             .oneOf(
@@ -73,9 +87,27 @@ const CommunityCreateForm = () => {
                 return c.id;
               })
             ),
-          website: Yup.string().url("Must be a valid URL")
-          // funding: Yup.string().max(250, "Must be 250 characters or less"),
-          // domain: Yup.string().max(250, "Must be 250 characters or less")
+          website: Yup.string().url("Must be a valid URL"),
+          funding: Yup.array().of(Yup.string()
+          .max(20, "Must be 20 characters or less")),
+          domain: Yup.array().of(Yup.string()
+          .max(20, "Must be 20 characters or less")),
+          alternate_identifiers: Yup.array().of(Yup.string()
+            .max(20, "Must be 20 characters or less")),
+          record_policy: Yup.string()
+            .required("Required")
+            .oneOf(
+              RECORD_POLICY_TYPES.map( c => {
+                return c.id;
+              })
+            ),
+          member_policy: Yup.string()
+            .required("Required")
+            .oneOf(
+              MEMBER_POLICY_TYPES.map( c => {
+                return c.id;
+              })
+            ),
         })}
         onSubmit={(values, { setSubmitting, setErrors, setFieldError }) => {
           setSubmitting(true);
@@ -100,12 +132,14 @@ const CommunityCreateForm = () => {
             .finally(() => setSubmitting(false));
         }}
       >
-        {({ isSubmitting, isValid }) => (
+        {({ values, isSubmitting, isValid }) => (
           <Form>
             <TextInput label="ID" placeholder="biosyslit" name="id" />
             <TextInput label="Title" placeholder="BLR" name="title" />
             <SelectInput choices={COMMUNITY_TYPES} label="Type" name="type" />
             <RichInput label="Description" name="description" />
+            <RichInput label="Page" name="page" />
+            <RichInput label="Curation policy" name="curation_policy" />
             <TextInput
               label="Website"
               placeholder="https://example.org"
@@ -116,6 +150,19 @@ const CommunityCreateForm = () => {
               label="Visibility"
               name="visibility"
             />
+            <SelectInput
+              choices={MEMBER_POLICY_TYPES}
+              label="Member policy"
+              name="member_policy"
+            />
+            <SelectInput
+              choices={RECORD_POLICY_TYPES}
+              label="Record policy"
+              name="record_policy"
+            />
+            <StringArrayInput label="Domain" placeholder="biology" name="domain" />
+            <ObjectArrayInput label="Alternate Identifiers" name="alternate_identifiers" keys= "scheme/identifier"/>
+            <StringArrayInput label="Funding" name="funding" />
             <button
               disabled={!isValid || isSubmitting}
               className="btn"

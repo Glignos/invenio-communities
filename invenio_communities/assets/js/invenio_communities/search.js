@@ -21,15 +21,22 @@ const searchApi = new InvenioSearchApi({
   timeout: 5000
 });
 
+
+
 const CommunityRequestList = hits => {
+
+  var changeLocation = (id) =>{
+    window.location.href = `/communities/${id}`;
+  }
+
   if (!hits.length) return <div>No results</div>;
   return (
     <div>
       {hits.map(hit => {
         return (
           <div key={hit.metadata.id}>
-            <h3>{hit.metadata.title}</h3>
-            <p>{hit.metadata.description}</p>
+            <h3><a onClick={() => changeLocation(hit.metadata.id)}>{hit.metadata.title}</a></h3>
+            <div dangerouslySetInnerHTML={{ __html: hit.metadata.description }} />
             <span className="label label-primary">{hit.metadata.type}</span>
           </div>
         );

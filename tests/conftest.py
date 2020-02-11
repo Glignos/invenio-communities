@@ -35,8 +35,8 @@ from sqlalchemy_utils.functions import create_database, database_exists, \
 
 from invenio_communities import InvenioCommunities
 from invenio_communities.models import Community
-from invenio_communities.views.api import blueprint as api_blueprint
-from invenio_communities.views.ui import blueprint as ui_blueprint
+from invenio_communities.views.members.api import blueprint as api_blueprint
+from invenio_communities.views.members.ui import blueprint as ui_blueprint
 
 
 @pytest.yield_fixture()

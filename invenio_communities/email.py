@@ -24,20 +24,12 @@
 
 from __future__ import absolute_import, print_function
 
-import binascii
-import os
-from base64 import urlsafe_b64encode
-from datetime import datetime
 
-from flask_security import current_user
-from flask import current_app
-from itsdangerous import BadData, JSONWebSignatureSerializer, \
-    SignatureExpired, TimedJSONWebSignatureSerializer
 from datetime import timedelta
-
 from flask import current_app, render_template, url_for
 from flask_babelex import gettext as _
 from flask_mail import Message
+
 from invenio_mail.tasks import send_email
 
 
@@ -47,19 +39,19 @@ def send_email_invitation(request_id, emails, community, role=None):
         _send_notification(
             email,
             _("Access request verification"),
-            "invenio_communities/emails/request_email.tpl",
+            "invenio-communities/request_email.tpl",
             community=community,
             days=timedelta(
                 seconds=current_app.config[
                     "COMMUNITIES_MEMBERSHIP_REQUESTS_CONFIRMLINK_EXPIRES_IN"]
             ).days,
+            # URL needs to change to UI one, but its problematic due to context
             confirm_link=url_for(
                 "invenio_communities.community_requests_api",
                 membership_request_id=request_id,
                 _external=True,
             )
         )
-    return token
 
 
 def _send_notification(to, subject, template, **ctx):

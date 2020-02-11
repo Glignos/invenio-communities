@@ -27,8 +27,14 @@ communities = WebpackBundle(
     entry={
         'communities-new': './js/invenio_communities/new.js',
         'communities-search': './js/invenio_communities/search.js',
+        'communities-settings': './js/invenio_communities/settings.js',
+        'communities-members': './js/invenio_communities/members.js',
+        'communities-request': './js/invenio_communities/request.js'
     },
     dependencies={
+        'semantic-ui-react': '^0.88.2',
+        '@ckeditor/ckeditor5-build-classic': '^16.0.0',
+        '@ckeditor/ckeditor5-react': '^2.1.0',
         'axios': '^0.19.0',
         'formik': '^2.0.6',
         'lodash': '^4.17.15',

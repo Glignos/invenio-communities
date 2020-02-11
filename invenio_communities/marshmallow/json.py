@@ -69,10 +69,10 @@ class CommunitySchemaMetadataV1(StrictKeysMixin):
         'topic',
         'project',
     ]))
-    alternate_identifiers = fields.List(fields.String())
+    alternate_identifiers = fields.List(fields.Raw())
     website = fields.Url()
     funding = fields.List(fields.String())
-    domain = fields.Str()
+    domain = fields.List(fields.String())
     verified = fields.Boolean()
     visibility = fields.Str(validate=validate.OneOf([
         'public',

@@ -6,7 +6,7 @@
  * under the terms of the MIT License; see LICENSE file for more details.
  */
 import React from "react";
-import { useField } from "formik";
+import { useField, FieldArray } from "formik";
 import CKEditor from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 
@@ -16,7 +16,7 @@ export const TextInput = ({ label, ...props }) => {
     meta.touched && meta.error ? (
       <div className="help-block">{meta.error}</div>
     ) : null;
-  return (
+  return(
     <div className={`form-group ${error ? "has-error" : ""}`}>
       <label htmlFor={props.id || props.name}>{label}</label>
       <input
@@ -78,3 +78,94 @@ export const SelectInput = ({ choices, label, ...props }) => {
     </div>
   );
 };
+
+
+export const StringArrayInput = ({ choices, label, ...props }) => {
+  const [ { value }, field, meta] = useField(props);
+  return (
+    <div className="form-group">
+    <label htmlFor={props.id || props.name}>{label}</label>
+    <FieldArray
+      name={`${props.name}`}
+      render={arrayHelpers => (
+        <div className="form-group">
+          {value && value.length > 0 ? (
+            value.map( (alternate_identifier, index) => (
+              <div key={index}>
+                <TextInput label={`${props.name}.${index}`} name={`${props.name}[${index}]`} />
+                <button
+                  type="button"
+                  onClick={() => arrayHelpers.remove(index)} // remove a friend from the list
+                >
+                  -
+                </button>
+                <button
+                  type="button"
+                  onClick={() => arrayHelpers.push('')} // insert an empty string at a position
+                >
+                  +
+                </button>
+              </div>
+            ))
+          ) : (
+            <button type="button" onClick={() => arrayHelpers.push('')}>
+              {/* show this when user has removed all alternate_identifiers from the list */}
+              Add an alternate identifier
+            </button>
+          )}
+          </div>
+      )}
+        />
+    </div>
+  )
+}
+
+
+export const ObjectArrayInput = ({ choices, label, ...props }) => {
+  const [ { value }, field, meta] = useField(props);
+  const keys_list = props.keys.split('/')
+  var new_obj = {}
+  keys_list.forEach(function(key) {
+    new_obj[key] = '';
+  });
+  return (
+    <div className="form-group">
+    <label htmlFor={props.id || props.name}>{label}</label>
+    <FieldArray
+      name={`${props.name}`}
+      render={arrayHelpers => (
+        <div className="form-group">
+          {value && value.length > 0 ? (
+            value.map( (alternate_identifier, index) => (
+              <div key={index}>
+                {props.keys.split('/').map( (key, key_index) => (
+                  <div key={key}>
+                  <TextInput label={`${index}.${key}`} name={`${props.name}[${index}].${key}`} />
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => arrayHelpers.remove(index)} // remove a friend from the list
+                >
+                  -
+                </button>
+                <button
+                  type="button"
+                  onClick={() => arrayHelpers.push({ ...new_obj })} // insert an empty string at a position
+                >
+                  +
+                </button>
+              </div>
+            ))
+          ) : (
+            <button type="button" onClick={() => arrayHelpers.push({ ...new_obj })}>
+              {/* show this when user has removed all alternate_identifiers from the list */}
+              Add an alternate identifier
+            </button>
+          )}
+          </div>
+      )}
+        />
+    </div>
+  )
+}
