@@ -17,12 +17,41 @@ from werkzeug.local import LocalProxy
 from invenio_db import db
 
 from invenio_communities.members.models import CommunityMetadata
+from invenio_pidstore.models import PersistentIdentifier
 
 from .members.api import CommunityMembersAPI
 
 
-class Community(Record):
+# TODO: Move somewhere appropriate (`invenio-records-pidstore`)
+class PIDRecordMixin:
+    """."""
+
+    pid_object_type = None
+    primary_pid_type = None
+
+    @property
+    def pid(self):
+        """."""
+        return PersistentIdentifier.query.filter_by(
+            object_uuid=self.id,
+            object_type=self.pid_object_type,
+            pid_type=self.primary_pid_type
+        ).one()
+
+    @property
+    def pids(self):
+        """."""
+        return PersistentIdentifier.query.filter_by(
+            object_uuid=self.id,
+            object_type=self.pid_object_type,
+        ).all()
+
+
+class Community(Record, PIDRecordMixin):
     """Define API for community creation and manipulation."""
+
+    pid_object_type = 'com'
+    primary_pid_type = 'comid'
 
     # TODO: Communities model doesn't have versioninig, some methods from
     # "invenio_records.api.RecordBase" have to be overridden/removed

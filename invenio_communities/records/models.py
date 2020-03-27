@@ -38,19 +38,6 @@ class Request(db.Model, RecordMetadataBase):
     __table_args__ = {'extend_existing': True}
     __versioned__ = {'versioning': False}
 
-    schema = {
-        "type": {
-            "type": "string",
-            # "enum": ["community-inclusion"],
-        },
-        "state": {
-            "type": "string",
-            # "enum": ["pending", "closed"],
-        },
-        "assignees": {"type": "int[]"},
-        "created_by": {"type": "int"},
-    }
-
     owner_id = db.Column(
         db.Integer,
         db.ForeignKey(User.id),
@@ -105,6 +92,17 @@ class RequestComment(db.Model, Timestamp):
     message = db.Column(db.Text)
 
     request = db.relationship(Request, backref='comments')
+
+    @classmethod
+    def create(cls, request_id, created_by, message):
+        with db.session.begin_nested():
+            obj = cls(
+                request_id=request_id,
+                created_by=created_by,
+                message=message,
+            )
+            db.session.add(obj)
+        return obj
 
 
 #
@@ -226,6 +224,7 @@ class CommunityRecord(db.Model, RecordMetadataBase):
                 record_pid=record_pid_id,
             )
         return obj
+
 
     # TODO: investigate using RECORDS_PIDS_OBJECT_TYPES or
     #       current_pidstore.resolve
