@@ -15,8 +15,10 @@ from flask_babelex import gettext as _
 from flask_mail import Message
 from six.moves.urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
-from invenio_mail.tasks import send_email
+from invenio_records.api import Record
 
+from invenio_mail.tasks import send_email
+from invenio_pidstore.resolver import Resolver
 
 def format_url_template(url_template, absolute=True, **kwargs):
     """Formats a URL template-like string."""
@@ -58,3 +60,8 @@ def send_invitation_email(membership_request, recipients, community):
         )
     )
     send_email.delay(msg.__dict__)
+
+
+record_resolver = Resolver(
+    pid_type='recid', object_type='rec', getter=Record.get_record
+)

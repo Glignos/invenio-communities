@@ -19,11 +19,13 @@ from invenio_db import db
 from invenio_pidstore.models import PersistentIdentifier
 from invenio_records.models import RecordMetadataBase, Timestamp
 from speaklater import make_lazy_gettext
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects import mysql
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy_utils.types import ChoiceType, UUIDType
 
 from invenio_communities.models import CommunityMetadata
+from .errors import CommunityRecordAlreadyExists, CommunityRecordDoesNotExist
 
 # TODO make sure well what this does and that we need this dependency
 _ = make_lazy_gettext(lambda: gettext)
@@ -59,11 +61,30 @@ class Request(db.Model, RecordMetadataBase):
         db.String(255),
     )
 
-    owner = db.relationship(
-        User,
-        # TODO: keep the backref?
-        backref='requests',
-    )
+    # request_comments = relationship("RequestComment", cascade="delete-orphan")
+    # owner = db.relationship(
+    #     User,
+    #     # TODO: keep the backref?
+    #     backref='requests',
+    # )
+
+    @classmethod
+    def delete(cls, request):
+        """Delete community request."""
+        with db.session.begin_nested():
+            db.session.delete(request)
+
+    @classmethod
+    def create(cls, owner_id, json, id):
+        """Create a request."""
+        with db.session.begin_nested():
+            obj = cls(
+                owner_id=owner_id,
+                json=json,
+                id=id,
+            )
+            db.session.add(obj)
+        return obj
 
 
 class RequestComment(db.Model, Timestamp):
@@ -79,7 +100,7 @@ class RequestComment(db.Model, Timestamp):
 
     request_id = db.Column(
         UUIDType,
-        db.ForeignKey(Request.id),
+        db.ForeignKey(Request.id, ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -104,26 +125,10 @@ class RequestComment(db.Model, Timestamp):
             db.session.add(obj)
         return obj
 
-
 #
 # Community models
 #
-class CommunityRecordError(Exception):
-    """Community record base error class."""
-    def __init__(self, community_pid_id, record_pid_id):
-        """Initialize Exception."""
-        self.community_pid_id = community_pid_id
-        self.record_pid_id = record_pid_id
-
-
-class CommunityRecordAlreadyExists(CommunityRecordError):
-    """Record inclusion already exists error."""
-    pass
-
-
-class CommunityRecordDoesNotExist(CommunityRecordError):
-    """Record inclusion does not exist error."""
-    pass
+# TODO: Move to errors.py
 
 
 COMMUNITY_RECORD_STATUS = {
@@ -220,11 +225,16 @@ class CommunityRecord(db.Model, RecordMetadataBase):
         #       when db.session.add() is called.
         except IntegrityError:
             raise CommunityRecordAlreadyExists(
-                community_pid=community_pid_id,
-                record_pid=record_pid_id,
+                community_pid_id=community_pid_id,
+                record_pid_id=record_pid_id,
             )
         return obj
 
+    @classmethod
+    def delete(community_record):
+        """Delete community record relationship."""
+        with db.session.begin_nested():
+            db.session.delete(community_record)
 
     # TODO: investigate using RECORDS_PIDS_OBJECT_TYPES or
     #       current_pidstore.resolve

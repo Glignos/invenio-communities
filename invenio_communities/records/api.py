@@ -11,6 +11,8 @@
 from __future__ import absolute_import, print_function
 
 from collections import defaultdict
+from enum import Enum
+from flask import url_for
 
 from invenio_db import db
 from invenio_records.api import Record
@@ -20,10 +22,10 @@ from invenio_communities.records.models import \
     CommunityRecord as CommunityRecordModel
 from invenio_communities.records.models import CommunityRecordAlreadyExists, \
     CommunityRecordStatus, RequestComment
-from invenio_communities.records.models import Request as RequestModel
+from invenio_communities.records.models import Request as RequestModel, \
+     CommunityRecordStatus
 from invenio_communities.api import Community, PIDRecordMixin
 from invenio_indexer.api import RecordIndexer
-
 """
 /api/communities/<comid>/requests/inclusion [LIST|POST]
 
@@ -54,71 +56,71 @@ q="communities.pending.id:biosyslit"
 """
 
 
-# /api/communities/<comid>/requests/inclusion [POST]
-def post(comid):
-    # def create(cls, record_pid, community_pid, request, status=None, data=None)
-    community = resolve_comid(comid)
-    recid, record = resolve_recid(request.json['recid'])
+# # /api/communities/<comid>/requests/inclusion [POST]
+# def post(comid):
+#     # def create(cls, record_pid, community_pid, request, status=None, data=None)
+#     community = resolve_comid(comid)
+#     recid, record = resolve_recid(request.json['recid'])
 
-    request = CommunityInclusionRequest.create(current_user)
-    if current_user in community.members:
-        request.routing_key = f'record:{recid.pid_value}:owners'
-    else:
-        request.routing_key = f'community:{comid.pid_value}:curators'
-    com_rec = CommunityRecord.create(record.pid, community.pid, request)
-    db.session.commit()
+#     request = CommunityInclusionRequest.create(current_user)
+#     if current_user in community.members:
+#         request.routing_key = f'record:{recid.pid_value}:owners'
+#     else:
+#         request.routing_key = f'community:{comid.pid_value}:curators'
+#     com_rec = CommunityRecord.create(record.pid, community.pid, request)
+#     db.session.commit()
 
-    # Notify request owners and receivers
-    # TODO: implement mail sending
-    send_request_emails(request)
+#     # Notify request owners and receivers
+#     # TODO: implement mail sending
+#     send_request_emails(request)
 
-    # Index record with new inclusion request info
-    # TODO: Implement indexer receiver to include community info in record
-    RecordIndexer().index_by_id(record.id)
+#     # Index record with new inclusion request info
+#     # TODO: Implement indexer receiver to include community info in record
+#     RecordIndexer().index_by_id(record.id)
 
-    return make_response(com_rec.dumps(), 201)
+#     return make_response(com_rec.dumps(), 201)
 
-#Do we need filtering args?
-# /api/communities/<comid>/requests/inclusion [LIST]
-def get(comid):
-    community = resolve_comid(comid)
-    community_records = Community.records.list
+# #Do we need filtering args?
+# # /api/communities/<comid>/requests/inclusion [LIST]
+# def get(comid):
+#     community = resolve_comid(comid)
+#     community_records = Community.records.list
 
-    # Notify request owners and receivers
-    #TODO
-    send_request_emails(request)
+#     # Notify request owners and receivers
+#     #TODO
+#     send_request_emails(request)
 
-    return make_response(com_rec, ...)
+#     return make_response(com_rec, ...)
 
-# /api/communities/<comid>/requests/inclusion/<request_id> [GET]
-def get(comid, request_id):
-    community = resolve_comid(comid)
-    request = CommunityInclusionRequest.get_record(request_id)
-    {
-        'request_id': request.id,
-        'created_by': request.owner_id,
-        'comments': [
-            {'message': c.message, 'created_by': 567}
-            for c in request.comments
-        ]
-    }
-    return make_response(request, ...)
+# # /api/communities/<comid>/requests/inclusion/<request_id> [GET]
+# def get(comid, request_id):
+#     community = resolve_comid(comid)
+#     request = CommunityInclusionRequest.get_record(request_id)
+#     {
+#         'request_id': request.id,
+#         'created_by': request.owner_id,
+#         'comments': [
+#             {'message': c.message, 'created_by': 567}
+#             for c in request.comments
+#         ]
+#     }
+#     return make_response(request, ...)
 
-# /api/communities/<comid>/requests/inclusion/<request_id> [PUT]
-def put(comid, request_id):
-    community = resolve_comid(comid)
-    record_request = CommunityInclusionRequest.get_record(request_id)
-    record_request.add_comment(record_request.id, user, request.json)
-    return make_response(request, ...)
+# # /api/communities/<comid>/requests/inclusion/<request_id> [PUT]
+# def put(comid, request_id):
+#     community = resolve_comid(comid)
+#     record_request = CommunityInclusionRequest.get_record(request_id)
+#     record_request.add_comment(record_request.id, user, request.json)
+#     return make_response(request, ...)
 
-# /api/communities/<comid>/requests/inclusion/<request_id> [DELETE]
-def delete(comid, request_id):
-    community = resolve_comid(comid)
-    record_request = CommunityInclusionRequest.get_record(request_id)
+# # /api/communities/<comid>/requests/inclusion/<request_id> [DELETE]
+# def delete(comid, request_id):
+#     community = resolve_comid(comid)
+#     record_request = CommunityInclusionRequest.get_record(request_id)
 
-    record_request.remove()
+#     record_request.remove()
 
-    return make_response(request, ...)
+#     return make_response(request, ...)
 
 
 class Request(Record):
@@ -159,10 +161,20 @@ class Request(Record):
         # TODO: do we need a comment API Class?
         return RequestComment.create(self.id, user.id, message)
 
+    @classmethod
+    def get_by_id(cls, request_id):
+        request_model = cls.model_cls.get_record(request_id)
+        return cls(request_model.json, model=request_model)
+
+    def delete(self):
+        self.model.delete(self.model)
 
 class CommunityInclusionRequest(Request):
 
     TYPE = 'community-inclusion-request'
+
+    # TODO: see how to implement or if needed at all...
+    # community_record_cls = CommunityRecord
 
     # TODO: Override
     schema = {
@@ -178,6 +190,7 @@ class CommunityInclusionRequest(Request):
         "created_by": {"type": "int"},
     }
 
+    # TODO: implement "state" property with getter/setter?
     class State(Enum):
         OPEN = 'open'
         CLOSED = 'closed'
@@ -201,18 +214,20 @@ class CommunityInclusionRequest(Request):
         return self.community_record.record
 
     @classmethod
-    def create(cls, owner, **kwargs):
+    def create(cls, owner, id_=None, **kwargs):
         """Create a community inclusion request."""
         data = {
             'type': cls.TYPE,
-            'state': State.OPEN,
+            'state': cls.State.OPEN.value,
             'created_by': owner.id,
             **kwargs,
         }
-        model = self.model_cls(
+        model = cls.model_cls.create(
             owner_id=owner.id,
             json=data,
+            id=id_
         )
+        db.session.add(model)
         return cls(data, model=model)
 
     def as_dict(self):
@@ -228,25 +243,89 @@ class CommunityInclusionRequest(Request):
                     'created': c.created,
                     'updated': c.updated,
                 } for c in self.comments
-            ]
+            ],
         }
+
+    # TODO: Probably part of view/controller
+    @classmethod
+    def dump_links(cls, request, pid_value):
+        # TODO: urlfor these links
+        actions = ['comment', 'accept', 'reject']
+        links = {
+            "self": url_for(
+                'invenio_communities_records.requests_item',
+                pid_value=pid_value,
+                request_id=request.id
+                )
+        }
+        for action in actions:
+            links[action] = url_for(
+                'invenio_communities_records.requests_item',
+                pid_value=pid_value,
+                request_id=request.id,
+                action=action
+                )
+        if request['state'] == cls.State.OPEN:
+            links.update(
+                {
+                    "accept": url_for(
+                        'invenio_communities_records.requests_item',
+                        pid_value=pid_value,
+                        request_id=request.id,
+                        action='accept'
+                        ),
+                    "reject": url_for(
+                        'invenio_communities_records.requests_item',
+                        pid_value=pid_value,
+                        request_id=request.id,
+                        action='reject'
+                        ),
+                }
+            )
+        return links
+
+
+
+class RecordCommunitiesMixin(PIDRecordMixin):
+
+    # record_communities_iter_cls = RecordCommunitiesCollection
+
+    pid_object_type = 'rec'
+    primary_pid_type = 'recid'
+
+    @property
+    def communities(self):
+        return self.record_communities_iter_cls(self.pid.id)
+
+    # TODO: Take into account in the controllers
+    # def block_community(cls, community):
+    #     # TODO: should this be implemented on the level of Request API
+    #     # TODO create a CommunityMember relationship restricting this
+    #     pass
 
 
 class CommunityRecord(Record):
     """Community-record API class."""
 
     model_cls = CommunityRecordModel
+    community_cls = Community
+    record_cls = Record
 
     schema = {
         # TODO: Define schema
     }
 
+    Status = CommunityRecordStatus
+
     @property
     def request(self):
         """Community record request."""
         # TODO: Return a RequestRecord object, not the SQLAlchemy model
-        return self.model.request if self.model else None
-
+        if self.model:
+            return CommunityInclusionRequest(
+                self.model.request.json, self.model.request)
+        else:
+            return None
     @property
     def status(self):
         """Get community record relationship status."""
@@ -257,19 +336,37 @@ class CommunityRecord(Record):
         """Set community record relationship status."""
         self.model.status = new_status
 
+    @property
+    def community(self):
+        """Get request's community record relatinship."""
+        if not getattr(self, '_community', None):
+            self._community = self.community_cls.get_record(
+                self.model.community_pid.object_uuid)
+        return self._community
+
+    @property
+    def record(self):
+        """Get request's community record relatinship."""
+        if not getattr(self, '_record', None):
+            self._record = self.record_cls.get_record(
+                self.model.record_pid.object_uuid)
+        return self._record
+
     @classmethod
-    def create(cls, record, community, request, status=None,
-               auto_approve=False, can_curate=False, data=None):
+    def create(cls, record, record_pid, community, request, status=None,
+               can_curate=False, data=None):
         data = data or {}
         model = CommunityRecordModel.create(
-            community_pid=community.pid.id,
-            record_pid=record.pid.id,
+            community_pid_id=community.pid.id,
+            record_pid_id=record_pid.id,
             request_id=request.id,
             status=status,
             json=data,
         )
-
-        return cls(data, model=model)
+        obj = cls(data, model=model)
+        obj._community = community
+        obj._record = record
+        return obj
 
     @classmethod
     def get_by_pids(cls, community_pid, record_pid):
@@ -292,14 +389,26 @@ class CommunityRecord(Record):
             return None
         return cls(model.json, model=model)
 
-    def as_dict(self, record=True, request=True):
+    def as_dict(self, include_request=True):
+        # TODO: This should return the record PID instead.
+        # Needs PIDMIXIN fix, investigate any resolving issues.
         res = {
-            'status': self.status,
-            'record_pid': self.record.pid
+            'status': str(self.status.title),
+            'record_pid': self.record.id
         }
-        if request:
+        if include_request:
             res['request'] = self.request.as_dict()
         return res
+
+    # TODO: sanity check this
+    @property
+    def record_pid_value(self):
+        return self.model.record_pid.pid_value
+
+    # TODO: sanity check this
+    @property
+    def community_pid_value(self):
+        return self.model.community_pid.pid_value
 
 
 class CommunityRecordsCollectionBase:
@@ -322,20 +431,21 @@ class CommunityRecordsCollectionBase:
     def __getitem__(self, key):
         raise NotImplementedError()
 
-    @property
-    def query(self):
-        raise NotImplementedError()
-
 
 class CommunityRecordsCollection(CommunityRecordsCollectionBase):
 
-    def __init__(self, community):
+    def __init__(self, community, query=None):
         self.community = community
-
-    @property
-    def query(self):
-        return CommunityRecord.query.filter_by(
+        self._query = query or CommunityRecord.query.filter_by(
             community_pid_id=self.community.pid.id)
+
+    def filter(self, conditions):
+        new_query = self._query.filter_by(**conditions)
+        return self.__class__(self.community, _query=new_query)
+
+    # TODO: implement if needed
+    # def __contains__(self, item):
+    #     pass
 
     def __getitem__(self, record):
         """Get a specific community record by record PID."""
@@ -350,11 +460,12 @@ class CommunityRecordsCollection(CommunityRecordsCollectionBase):
         community_record = self[record]
         return community_record.delete()
 
-    def as_dict(self):
+    def as_dict(self, include_requests=False):
         community_records = defaultdict(list)
         for community_record in self:
             status = community_record.status.title
-            community_records[status].append(community_record.as_dict())
+            community_records[status].append(community_record.as_dict(
+                include_requests))
         return community_records
 
 
@@ -370,7 +481,7 @@ class RecordCommunitiesCollection(CommunityRecordsCollectionBase):
 
     def __getitem__(self, community):
         """Get a specific community record."""
-       return self.community_record_cls.get_by_pids(
+        return self.community_record_cls.get_by_pids(
             community.pid, self.record.pid)
 
     def add(self, community, request):
@@ -409,19 +520,3 @@ class CommunityRecordsMixin:
     #     pass
 
 
-class RecordCommunitiesMixin(PIDMixin):
-
-    record_communities_iter_cls = RecordCommunitiesCollection
-
-    pid_object_type = 'rec'
-    primary_pid_type = 'recid'
-
-    @property
-    def communities(self):
-        return self.record_communities_iter_cls(self.pid.id)
-
-    # TODO: Take into account in the controllers
-    # def block_community(cls, community):
-    #     # TODO: should this be implemented on the level of Request API
-    #     # TODO create a CommunityMember relationship restricting this
-    #     pass
