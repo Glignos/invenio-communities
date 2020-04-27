@@ -21,6 +21,7 @@ from flask_security import current_user
 from sqlalchemy.exc import SQLAlchemyError
 from invenio_records_rest.errors import PIDResolveRESTError
 
+from invenio_communities.records.api import CommunityRecordsCollection
 
 class FlaskParser(FlaskParserBase):
     """Parser to add FieldError to validation errors."""
@@ -90,10 +91,13 @@ ui_blueprint = Blueprint(
 @pass_community_function
 def community_page(community, pid):
     """Members of a community."""
+    pending_records = \
+        len(CommunityRecordsCollection(community).filter({'status': 'P'}))
     return render_template(
         'invenio_communities/community_page.html',
         community=community,
-        pid=pid
+        pid=pid,
+        pending_records=pending_records
     )
 
 
@@ -126,5 +130,10 @@ def index():
 @pass_community_function
 def settings(community, pid):
     """Modify a community."""
+    pending_records = \
+        len(CommunityRecordsCollection(community).filter({'status': 'P'}))
     return render_template(
-        'invenio_communities/settings.html', community=community, pid=pid)
+        'invenio_communities/settings.html',
+        community=community,
+        pid=pid,
+        pending_records=pending_records)

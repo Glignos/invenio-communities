@@ -417,10 +417,10 @@ class CommunityRecordsCollectionBase:
 
     def __len__(self):
         """Get number of community records."""
-        return self.query.count()
+        return self._query.count()
 
     def __iter__(self):
-        self._it = iter(self.query)
+        self._it = iter(self._query)
         return self
 
     def __next__(self):
@@ -434,9 +434,9 @@ class CommunityRecordsCollectionBase:
 
 class CommunityRecordsCollection(CommunityRecordsCollectionBase):
 
-    def __init__(self, community, query=None):
+    def __init__(self, community, _query=None):
         self.community = community
-        self._query = query or CommunityRecord.query.filter_by(
+        self._query = _query or CommunityRecordModel.query.filter_by(
             community_pid_id=self.community.pid.id)
 
     def filter(self, conditions):
@@ -471,13 +471,14 @@ class CommunityRecordsCollection(CommunityRecordsCollectionBase):
 
 class RecordCommunitiesCollection(CommunityRecordsCollectionBase):
 
-    def __init__(self, record):
+    def __init__(self, record, _query=None):
         self.record = record
-
-    @property
-    def query(self):
-        return CommunityRecord.query.filter_by(
+        self._query = _query or CommunityRecordModel.query.filter_by(
             record=self.record.pid.id)
+
+    def filter(self, conditions):
+        new_query = self._query.filter_by(**conditions)
+        return self.__class__(self.community, _query=new_query)
 
     def __getitem__(self, community):
         """Get a specific community record."""

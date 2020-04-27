@@ -12,16 +12,38 @@
 {%- set statistics = "/communities/" + pid.pid_value|string + "/statistics" -%}
 {%- set curate = "/communities/" + pid.pid_value|string + "/curate" -%}
 
+
 {% block sidebar %}
-<div class="container">
-<h1>{{ community.title }}</h1>
-<p>{{ community.description|safe }}</p>
-<div class="tab">
-  <a class="tablinks" href="{{ search }}">Search</a>
-  <a class="tablinks" href="{{ members }}">Members</a>
-  <a class="tablinks" href="{{ settings }}">Settings</a>
-  <a class="tablinks" href="{{ statistics }}">Statistics</a>
-  <a class="tablinks" href="{{ curate }}">Curate</a>
-</div>
+<div class="community-container">
+  <div class="container ">
+    <div class="col-md-1 community-logo">
+    <img src="/static/images/eu.png" width="88" height="60">
+  </div>
+    <div class="col-md-5">
+      <h1>{{ community.title }}</h1>
+      <p>{{ community.website|safe }}</p>
+      {% for domain in community.domain %}
+      <a href="" class="links-underline">{{ domain }}</a>
+      {% endfor %}
+    </div>
+    <div class="col-md-2 bop">
+      <h4 class="bold">1k</h4>
+      <p>Views</p>
+    </div>
+    <div class="col-md-2 bop">
+      <h4 class="bold">1k</h4>
+      <p>Downloads</p>
+    </div>
+    <div class="col-md-2 bop">
+      <button class="ui positive button">New upload</button>
+    </div>
+    <div class="ui top attached tabular menu">
+      <a class="item" href="{{ search }}">Search</a>
+      <a class="item" href="{{ curate }}">Curate ({{ pending_records }})</a>
+      <a class="center item" href="{{ members }}">Members</a>
+      <a class="item" href="{{ settings }}">Settings</a>
+      <a class="item" href="{{ statistics }}">Statistics</a>
+    </div>
+  </div>
 </div>
 {% endblock %}

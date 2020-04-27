@@ -61,6 +61,20 @@ class CommunityMembersAPI(object):
         else:
             return None
 
+    # TODO: implement as contains in the future refactor
+    @classmethod
+    def has_member(cls, community, user):
+        # TODO: maybe int(user_id)
+        import ipdb; ipdb.set_trace()
+        return CommunityMember.query.filter_by(
+            comm_id=community.id, user_id=user.id).one_or_none()
+
+    @classmethod
+    def has_admin(cls, community, user):
+        # TODO: maybe int(user_id)
+        return CommunityMember.query.filter_by(
+            comm_id=community.id, user_id=user.id, role='A').one_or_none()
+
 
 class MembershipRequestAPI(object):
 

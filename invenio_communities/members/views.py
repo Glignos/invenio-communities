@@ -10,6 +10,7 @@
 
 from __future__ import absolute_import, print_function
 
+from flask_login import current_user, login_required
 from flask_menu import current_menu
 from flask.views import MethodView
 from webargs import ValidationError, fields, validate
@@ -243,6 +244,7 @@ class MembershipRequestResource(MethodView):
         )
     }
 
+
     def get(self, membership_request_id):
         """Get the information for a membership request."""
         request, community = MembershipRequestAPI.get_invitation(
@@ -314,6 +316,7 @@ ui_blueprint = Blueprint(
 )
 
 
+@login_required
 @ui_blueprint.route('/communities/<{0}:pid_value>/members'.format(
             'pid(comid,record_class="invenio_communities.api:Community",'
             'object_type="com")'))
@@ -324,7 +327,7 @@ def members(community, pid):
         'invenio_communities/members.html', community=community, pid=pid)
 
 
-
+@login_required
 @ui_blueprint.route('/communities/members/requests/<membership_request_id>')
 def requests(membership_request_id):
     """Requests of communities."""
