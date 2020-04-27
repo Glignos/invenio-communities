@@ -291,7 +291,7 @@ class CommunityRecordsCollectionBase:
 
 class CommunityRecordsCollection(CommunityRecordsCollectionBase):
 
-    def __init__(self, community, query=None):
+    def __init__(self, community, _query=None):
         self.community = community
         # TODO: Make lazier (e.g. via property)
         self._query = query or CommunityRecordModel.query.filter_by(
@@ -330,6 +330,10 @@ class RecordCommunitiesCollection(CommunityRecordsCollectionBase):
         # TODO: Make lazier (e.g. via property)
         self._query = query or CommunityRecordModel.query.filter_by(
             record_pid_id=self.record.pid.id)
+
+    def filter(self, conditions):
+        new_query = self._query.filter_by(**conditions)
+        return self.__class__(self.community, _query=new_query)
 
     def __getitem__(self, community):
         """Get a specific community record."""
