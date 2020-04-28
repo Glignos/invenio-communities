@@ -8,7 +8,6 @@
 import React, { Component, Fragment } from "react";
 import { Checkbox, List } from "semantic-ui-react";
 import { BucketAggregation } from "react-searchkit";
-import { config } from "../config";
 
 export class SearchFacets extends Component {
   _renderValueElement = (
@@ -37,8 +36,8 @@ export class SearchFacets extends Component {
     );
   };
 
-  renderAggregations = () => {
-    return config.aggregations.map((aggConfig, index) => {
+  renderAggregations = (searchConfig) => {
+    return searchConfig.aggregations.map((aggConfig, index) => {
       const { title, agg } = aggConfig;
       return (
         <Fragment key={index}>
@@ -53,6 +52,6 @@ export class SearchFacets extends Component {
   };
 
   render() {
-    return <Fragment>{this.renderAggregations()}</Fragment>;
+    return <Fragment>{this.renderAggregations(this.props.searchConfig)}</Fragment>;
   }
 }

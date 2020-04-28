@@ -1,7 +1,8 @@
 // This file is part of InvenioRDM
 // Copyright (C) 2020 CERN.
+// Copyright (C) 2020 Northwestern University.
 //
-// Invenio is free software; you can redistribute it and/or modify it
+// Invenio App RDM is free software; you can redistribute it and/or modify it
 // under the terms of the MIT License; see LICENSE file for more details.
 
 import React from 'react';
@@ -10,11 +11,11 @@ import _truncate from 'lodash/truncate';
 
 export function ResultsGridItemTemplate(record, index) {
     return (
-      <Card fluid key={index} href={`/records/${record.id}`}>
+      <Card fluid key={index} href={`/communities/${record.metadata.id}`}>
         <Card.Content>
-          <Card.Header>{record.metadata.titles[0].title}</Card.Header>
+          <Card.Header>{record.metadata.title}</Card.Header>
           <Card.Description>
-            {_truncate(record.metadata.descriptions[0].description, { length: 200 })}
+          <div dangerouslySetInnerHTML={{ __html: record.metadata.description }} />
           </Card.Description>
         </Card.Content>
       </Card>

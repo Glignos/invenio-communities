@@ -13,11 +13,10 @@ import axios from "axios";
 import _ from "lodash";
 import { TextInput, SelectInput, RichInput, StringArrayInput, ObjectArrayInput } from "./forms";
 import { DeleteActionButton, ArrayField, SelectField, StringField } from './fields'
+import { Icon } from "semantic-ui-react";
 
 const domContainer = document.querySelector("#is_new_community");
 const __IS_NEW = JSON.parse(domContainer.dataset.config);
-console.log('vasdas')
-console.log(__IS_NEW === false)
 
 const renderIdentifiers = ({ arrayPath, indexPath, ...arrayHelpers }) => {
   const path = `${arrayPath}.${indexPath}`; // alternate_identifiers.0
@@ -193,8 +192,10 @@ const CommunityCreateForm = () => {
             .max(20, "Must be 20 characters or less")),
             domain: Yup.array().of(Yup.string()
             .max(20, "Must be 20 characters or less")),
-            alternate_identifiers: Yup.array().of(Yup.string()
-              .max(20, "Must be 20 characters or less")),
+            alternate_identifiers: Yup.array().of(Yup.object().shape({
+              scheme: Yup.string().max(20, "Must be 20 characters or less"),
+              identifier: Yup.string().max(20, "Must be 20 characters or less")
+            })),
             record_policy: Yup.string()
               .required("Required")
               .oneOf(
@@ -221,7 +222,7 @@ const CommunityCreateForm = () => {
             request_promise
               .then(response => {
                 console.log(response);
-                window.location.href = "/communities";
+                window.location.href = `/communities/${payload.id}`;
               })
               .catch(error => {
                 // TODO: handle nested fields
@@ -310,8 +311,9 @@ const CommunityCreateForm = () => {
               </div>
               <div class="col-md-2 community-logo-form">
                 <p>Profile picture:</p>
-                <img src="/static/images/logo.png" width="88" height="60"></img>
-                <button>Upload new image</button>
+                <Icon name="users massive"></Icon>
+                <br></br>
+                <button class="ui positive button small">Upload new image</button>
               </div>
             </Form>
           )}

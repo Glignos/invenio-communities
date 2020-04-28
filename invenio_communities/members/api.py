@@ -13,7 +13,7 @@ from __future__ import absolute_import, print_function
 from invenio_communities.members.models import CommunityMember, \
     CommunityMetadata, MembershipRequest
 
-from ..utils import send_invitation_email
+from invenio_communities.utils import send_invitation_email
 
 
 class CommunityMembersAPI(object):

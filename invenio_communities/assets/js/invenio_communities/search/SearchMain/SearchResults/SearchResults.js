@@ -1,11 +1,12 @@
 // This file is part of InvenioRDM
 // Copyright (C) 2020 CERN.
+// Copyright (C) 2020 Northwestern University.
 //
-// Invenio is free software; you can redistribute it and/or modify it
+// Invenio App RDM is free software; you can redistribute it and/or modify it
 // under the terms of the MIT License; see LICENSE file for more details.
 
-import React, { Component } from "react";
-import { Container, Grid } from "semantic-ui-react";
+import React, { Component, useContext } from "react";
+import { Container, Header, Icon, Grid, Segment } from "semantic-ui-react";
 import _truncate from "lodash/truncate";
 import {
   Count,
@@ -17,12 +18,12 @@ import {
   EmptyResults,
   Error,
   ResultsLoader,
-  withState
+  withState,
+  ResultsGrid,
+  ResultsList
 } from "react-searchkit";
 
-import { ResultsGridItem } from "./resultsItem";
-import { ResultsListItem } from "./resultsTemplate";
-import { config } from "../../config";
+import { SearchComponentsContext } from "../../SearchMain";
 
 const SpanWithMargin = ({ text, margin }) => {
   const size = "0.3em";
@@ -40,9 +41,27 @@ const SpanWithMargin = ({ text, margin }) => {
   return <span style={style}>{text}</span>;
 };
 
-class Results extends Component {
-  render() {
-    const { total } = this.props.currentResultsState.data;
+
+export const ResultsGridItem = () => {
+  const { ResultsGridItem } = useContext(SearchComponentsContext)
+  return (
+    <ResultsGrid renderGridItem={ResultsGridItem} />
+  );
+}
+
+
+export const ResultsListItem = () => {
+  const { ResultsListItem } = useContext(SearchComponentsContext);
+    return (
+    <Container>
+      <ResultsList renderListItem={ResultsListItem} />
+    </Container>
+  );
+}
+
+export const Results = ({currentResultsState}) => {
+    const { total } = currentResultsState.data;
+    const { searchConfig } = useContext(SearchComponentsContext);
     return total ? (
       <Container>
         <Grid relaxed verticalAlign="middle">
@@ -50,12 +69,12 @@ class Results extends Component {
             <SpanWithMargin text="Found" margin="right" />
             <Count />
             <SpanWithMargin text="results sorted by" />
-            <Sort values={config.sortValues} />
+            <Sort values={searchConfig.sortValues} />
           </Grid.Column>
           <Grid.Column width={8} textAlign="right">
             <SpanWithMargin text="Show" margin="right" />
             <ResultsPerPage
-              values={config.resultsPerPageValues}
+              values={searchConfig.resultsPerPageValues}
               defaultValue={10}
             />
             <SpanWithMargin text="results per page" />
@@ -75,18 +94,28 @@ class Results extends Component {
         </Grid>
       </Container>
     ) : null;
-  }
 }
 
 const OnResults = withState(Results);
+const OnEmptyResults = () => (
+  <Segment placeholder textAlign="center">
+    <Header icon>
+      <Icon name="search" />
+      No results found!
+    </Header>
+  </Segment>
+);
 
-export const SearchResults = () => (
+export const SearchResults = () => {
+  const { searchConfig } = useContext(SearchComponentsContext);
+  return(
   <ResultsLoader>
-    <EmptyResults />
+    <EmptyResults renderElement={OnEmptyResults} />
     <Error />
     <OnResults
-      sortValues={config.sortValues}
-      resultsPerPageValues={config.resultsPerPageValues}
+      sortValues={searchConfig.sortValues}
+      resultsPerPageValues={searchConfig.resultsPerPageValues}
     />
   </ResultsLoader>
-);
+  );
+};

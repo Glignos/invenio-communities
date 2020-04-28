@@ -20,6 +20,7 @@ from ..utils import comid_url_converter
 from ..views import pass_community, use_kwargs
 from .api import CommunityMembersAPI, MembershipRequestAPI
 from .models import CommunityMember, MembershipRequest
+from invenio_communities.records.api import CommunityRecordsCollection
 
 
 def create_blueprint_from_app(app):
@@ -316,8 +317,15 @@ ui_blueprint = Blueprint(
 @pass_community
 def members(comid=None, community=None):
     """Members of a community."""
+    pending_records = \
+        len(CommunityRecordsCollection(community).filter({'status': 'P'}))
+
     return render_template(
-        'invenio_communities/members.html', community=community, comid=comid)
+        'invenio_communities/members.html',
+        community=community,
+        comid=comid,
+        pending_records=pending_records
+        )
 
 
 @login_required

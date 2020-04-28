@@ -16,10 +16,10 @@
 
 {% block sidebar %}
 <div class="community-container">
-  <div class="container ">
-    <div class="col-md-1 community-logo">
-    <img src="/static/images/eu.png" width="88" height="60">
-  </div>
+  <div class="container top-padding">
+    <div class="col-md-2 community-logo">
+      <i aria-hidden="true" class="users massive icon"></i>
+    </div>
     <div class="col-md-5">
       <h1>{{ community.title }}</h1>
       <p>{{ community.website|safe }}</p>
@@ -27,15 +27,15 @@
       <a href="" class="links-underline">{{ domain }}</a>
       {% endfor %}
     </div>
-    <div class="col-md-2 bop">
-      <h4 class="bold">1k</h4>
+    <div class="col-md-1 ">
+      <h3 class="bold">1k</h3>
       <p>Views</p>
     </div>
-    <div class="col-md-2 bop">
-      <h4 class="bold">1k</h4>
+    <div class="col-md-2 ">
+      <h3 class="bold">1k</h3>
       <p>Downloads</p>
     </div>
-    <div class="col-md-2 bop">
+    <div class="col-md-2 ">
       <button class="ui positive button">New upload</button>
     </div>
     <div class="ui top attached tabular menu">

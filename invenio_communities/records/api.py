@@ -294,7 +294,7 @@ class CommunityRecordsCollection(CommunityRecordsCollectionBase):
     def __init__(self, community, _query=None):
         self.community = community
         # TODO: Make lazier (e.g. via property)
-        self._query = query or CommunityRecordModel.query.filter_by(
+        self._query = _query or CommunityRecordModel.query.filter_by(
             community_pid_id=self.community.pid.id)
 
     # TODO: implement if needed
@@ -328,7 +328,7 @@ class RecordCommunitiesCollection(CommunityRecordsCollectionBase):
     def __init__(self, record, query=None):
         self.record = record
         # TODO: Make lazier (e.g. via property)
-        self._query = query or CommunityRecordModel.query.filter_by(
+        self._query = _query or CommunityRecordModel.query.filter_by(
             record_pid_id=self.record.pid.id)
 
     def filter(self, conditions):
