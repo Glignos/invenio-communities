@@ -18,60 +18,17 @@ from invenio_communities.requests.models import Request
 
 from invenio_communities.members.models import \
     CommunityMember as CommunityMemberModel
-from invenio_communities.utils import send_invitation_email
+# from invenio_communities.utils import send_invitation_email
 from invenio_records.api import Record as RecordBaseAPI
 from invenio_communities.requests.api import RequestBase
 from werkzeug.local import LocalProxy
 from invenio_accounts.models import User
 from invenio_db import db
+from .models import CommunityMemberRole, CommunityMemberStatus
 
 Community = LocalProxy(
     lambda: current_app.extensions['invenio-communities'].community_cls)
-# def create_member_request(comid=None, community=None, email=None, message=None):
-#     # TODO: determine "who" is inviting "who"
-#     request_user = current_user
-#     request = CommunityMemberRequest.create(request_user, id_=uuid.uuid4())
-#     try:
-#         com_mem = CommunityMember.create(community, invitation_id, request)
-#     except:  # check if already exists
-#         pass
 
-
-# # POST /api/comunities/biosyslit/requests/members
-# def post(self, comid=None, community=None, email=None,
-#         role=None, message=None, **kwargs):
-#     request_creator = current_user
-#     request_member = User.query.filter_by(email=email).one()
-#     request = CommunityMemberRequest.create(
-#         request_creator, email, role, id_=uuid.uuid4())
-#     send_member_request_email.delay(str(request.id))
-#     # serialize response
-#     return None
-
-
-"""
-
--------- Views layer ------
-
-comm_member = api.CommunityMember.create(community=<api.Community>, user_id=<models.User>)
-comm_member.request.accept(...)
-
--------- API layer --------
-
-    api.Community   <--- api.CommunityMember    ---> models.User
-                                  |
-                                  v
-                        api.CommunityMemberRequest
-
--------- Models/DB layer --------
-
-models.PID("comid") <--- models.CommunityMember ---> models.User
-                                 |
-                                 v
-                            models.Request
-
-
-"""
 
 class CommunityMemberRequest(RequestBase):
 
@@ -134,6 +91,10 @@ class CommunityMemberRequest(RequestBase):
         return self.community_member.user
 
     def as_dict(self):
+        if self.is_invite:
+            request_type = 'invitation'
+        else:
+            request_type = 'request'
         return {
             'id': self.id,
             'created': self.created,
@@ -145,14 +106,14 @@ class CommunityMemberRequest(RequestBase):
                     'created': c.created,
                 } for c in self.comments
             ],
-            'is_invite': self.is_invite,
+            'request_type': request_type,
             'email': self.community_member.invitation_id
         }
 
     @property
     def is_invite(self):
         """Returns true or false depending on the request direction."""
-        return self.community.members.is_admin(self.owner)
+        return bool(self.community_member.invitation_id)
 
     @property
     def is_closed(self):
@@ -169,7 +130,6 @@ class CommunityMember(RecordBaseAPI):
     model_cls = CommunityMemberModel
     community_cls = Community
 
-    # TODO: figure out what other properties
     @property
     def request(self):
         """Community member request."""
@@ -295,7 +255,7 @@ class CommunityMember(RecordBaseAPI):
         actions = ['comment', 'accept', 'reject']
         links = {
             "self": url_for(
-                'invenio_communities_members.community_requests_management_api',
+                'invenio_communities_members.community_requests_api',
                 pid_value=self.community.pid.pid_value,
                 membership_id=str(self.id)
             )
@@ -315,8 +275,9 @@ class CommunityMember(RecordBaseAPI):
             'status': str(self.status.name.lower()),
             'role': str(self.role.name.lower()),
             'user_id': self.user.id if self.user else None,
+            'username': self.user.profile._displayname if self.user and self.user.profile else None,
             # TODO: Shouldn't be visible publicly
-            'invitation_id': self.invitation_id,
+            'email': self.invitation_id,
             # TODO: Generate these in the serializer
             'links': self.dump_links(),
         }
@@ -366,7 +327,8 @@ class CommunityMembersCollection:
         return self.community_member_cls.get_by_ids(
             self.community.pid, user_id)
 
-    def add(self, request, status='P', user=None, role='M', invitation_id=None):
+    def add(self, request, status='P', user=None,
+            role=CommunityMemberRole.MEMBER, invitation_id=None):
         return self.community_member_cls.create(
             community=self.community, request=request, role=role, user=user,
             status=status, invitation_id=invitation_id)
@@ -377,15 +339,28 @@ class CommunityMembersCollection:
 
     def paginate(self, page=1, size=20):
         # TODO sorting default by created date
-        pagination = self._query.paginate(page=page, per_page=size)
+        pagination = self._query.paginate(page=int(page), per_page=int(size))
         return [self.community_member_cls(i.json, model=i)
                 for i in pagination.items]
 
-    def as_dict(self, include_requests=False):
+    def as_dict(self, include_requests=False, result_iterator=None):
         res = defaultdict(list)
-        for community_member in self:
+        result_iterator = result_iterator or self
+        for community_member in result_iterator:
+            #TODO split maybe optionally to incoming and outgoing requests.
             status = community_member.status.name.lower()
             #TODO maybe change to include less information
+            # if status == 'pending':
+                #TODO fix this please
+                # if community_member.request.is_invite:
+                #     request_type = 'invitations'
+                # else:
+                #     request_type = 'requests'
+                # res[status] = res.get(status, {})
+                # res[status][request_type] = res[status].get(request_type, [])
+                # res[status][request_type].append(community_member.as_dict(
+                #     include_requests=include_requests))
+                #     include_requests=include_requests))
             res[status].append(community_member.as_dict(
                 include_requests=include_requests)
                 # 'user_id': community_member._user.id,
@@ -394,8 +369,9 @@ class CommunityMembersCollection:
                 # 'request_id': str(community_member.request.id),
                 # 'created_by': community_member.request['created_by'],
             )
+        #TODO add aggregations
         res = {"hits": {
-            "total": len(self._query),
+            "total": self._query.count(),
             "hits": res
         }}
         return res
@@ -410,6 +386,10 @@ class CommunityMembersCollection:
     def is_curator(self, user):
         community_curators = self.filter(role='C', status='A')
         return user.id in [curator.model.user_id for curator in community_curators]
+
+    def is_admin(self, user):
+        community_admins = self.filter(role='A', status='A')
+        return user.id in [admin.model.user_id for admin in community_admins]
 
 class CommunityMembersMixin:
 

@@ -17,11 +17,16 @@ from flask_babelex import gettext as _
 from flask_mail import Message
 from invenio_mail.tasks import send_email
 from invenio_pidstore.resolver import Resolver
+from invenio_accounts.models import User
 from invenio_records.api import Record
 from invenio_records_rest.utils import LazyPIDValue, obj_or_import_string
 from six.moves.urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 from werkzeug.routing import BaseConverter
 from werkzeug.utils import cached_property
+
+from .members.api import CommunityMember
+from .members.models import CommunityMemberRole
+from .members.models import CommunityMemberStatus
 
 
 def format_url_template(url_template, absolute=True, **kwargs):
@@ -104,3 +109,13 @@ comid_url_converter = (
     'record_class="invenio_communities.api:Community",'
     'object_type="com")'
 )
+
+def set_default_admin(community):
+    user = User.query.get(community['created_by'])
+    CommunityMember.create(
+        community=community,
+        role=CommunityMemberRole.ADMIN,
+        user=user,
+        status=CommunityMemberStatus.ACCEPTED
+    )
+

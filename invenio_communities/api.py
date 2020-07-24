@@ -22,7 +22,7 @@ from werkzeug.local import LocalProxy
 from invenio_communities.models import CommunityMetadata
 
 from .members.api import CommunityMember
-
+from.signals import community_created
 
 # TODO: Move somewhere appropriate (`invenio-records-pidstore`)
 class PIDRecordMixin:
@@ -77,6 +77,7 @@ class CommunityBase(Record, PIDRecordMixin):
     def create(cls, data, id_=None, **kwargs):
         """Create a new community instance and store it in the database."""
         with db.session.begin_nested():
+            #TODO case sensitive pids?
             data['$schema'] = str(cls.schema)
             community = cls(data)
             community.validate(**kwargs)
@@ -84,14 +85,7 @@ class CommunityBase(Record, PIDRecordMixin):
             db.session.add(community.model)
             # TODO: Move this logic to the controller or in a signal?
             # Add default community Admin
-            user = User.query.get(community['created_by'])
-            CommunityMember.create(
-                community=community,
-                role='A',
-                user=user,
-                status='A'
-            )
-
+            community_created.send(community)
         return community
 
     def clear(self):
